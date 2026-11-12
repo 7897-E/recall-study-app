@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-import type { Card, Deck, Me, Session, SessionResult, Stats, StudyMode } from '../../shared/types'
+import type { Board, BoardSummary, Card, Deck, Me, Note, Session, SessionResult, Stats, StudyMode } from '../../shared/types'
+import { accessToken } from './supabase'
 
 export class ApiError extends Error {
   constructor(
@@ -14,10 +15,16 @@ export class ApiError extends Error {
 
 export async function api<T>(path: string, init?: RequestInit & { json?: unknown }): Promise<T> {
   const { json, ...rest } = init ?? {}
+  const token = await accessToken()
   const response = await fetch(`/api${path}`, {
     credentials: 'same-origin',
     ...rest,
-    headers: { accept: 'application/json', ...(json !== undefined ? { 'content-type': 'application/json' } : {}), ...(rest.headers ?? {}) },
+    headers: {
+      accept: 'application/json',
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
+      ...(json !== undefined ? { 'content-type': 'application/json' } : {}),
+      ...(rest.headers ?? {}),
+    },
     body: json !== undefined ? JSON.stringify(json) : rest.body,
   })
   if (!response.ok) {
@@ -44,6 +51,10 @@ export const useDeck = (id: string | undefined) =>
     enabled: Boolean(id),
   })
 export const useStats = () => useQuery({ queryKey: ['stats'], queryFn: () => api<Stats>('/stats') })
+export const useNotes = () => useQuery({ queryKey: ['notes'], queryFn: () => api<{ items: Note[] }>('/notes') })
+export const useBoards = () => useQuery({ queryKey: ['boards'], queryFn: () => api<{ items: BoardSummary[] }>('/boards') })
+export const useBoard = (id: string | undefined) =>
+  useQuery({ queryKey: ['board', id], queryFn: () => api<{ board: Board }>(`/boards/${id}`), enabled: Boolean(id) })
 
 export function useInvalidate() {
   const client = useQueryClient()

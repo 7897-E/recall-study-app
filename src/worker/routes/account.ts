@@ -27,7 +27,7 @@ account.get('/me', async (c) => {
     user: { sub: user.sub, name: user.name, email: user.email, picture: user.picture },
     streak: streakFrom(await sessionDays(db, user.sub)).current,
     seeded: Boolean(row.seeded_at),
-    capabilities: { database: true, files: Boolean(c.env.FILES), auth: authMode(c.env, c.req.raw) === 'freebuff' ? 'freebuff' : 'development' },
+    capabilities: { database: true, files: Boolean(c.env.FILES), auth: authMode(c.env, c.req.raw) === 'supabase' ? 'supabase' : 'development' },
   }
   return privateJson(c, body)
 })

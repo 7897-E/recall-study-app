@@ -1,4 +1,9 @@
-import type { FreebuffUser } from '@freebuff/auth'
+export interface AuthUser {
+  sub: string
+  name?: string
+  email?: string
+  picture?: string
+}
 
 export interface Env {
   ASSETS: Fetcher
@@ -6,14 +11,14 @@ export interface Env {
   // the app can explain what is missing instead of crashing.
   DB?: D1Database
   FILES?: R2Bucket
-  // Injected on deploy once Sign in with Freebuff is enabled (sites_enable_auth).
-  FREEBUFF_CLIENT_ID?: string
-  FREEBUFF_ISSUER?: string
-  APP_ORIGIN?: string
+  // Supabase project (Dashboard → Project Settings → API). The anon key is
+  // public by design; the Worker only uses it to introspect access tokens.
+  SUPABASE_URL?: string
+  SUPABASE_ANON_KEY?: string
 }
 
 export type Variables = {
-  user: FreebuffUser
+  user: AuthUser
   db: D1Database
 }
 

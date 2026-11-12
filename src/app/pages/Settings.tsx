@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import { Avatar, Badge, Button, ConfirmDialog, useToast } from '../components/ui'
 import { api, useApiMutation, useMe } from '../lib/api'
+import { signOut } from '../lib/supabase'
 
 export function Settings() {
   const { data: me } = useMe()
@@ -34,16 +35,13 @@ export function Settings() {
             <p className="truncate text-[15px] font-medium">{me.user.name ?? 'Signed in'}</p>
             {me.user.email && <p className="truncate text-[13px] text-muted">{me.user.email}</p>}
           </div>
-          {me.capabilities.auth === 'freebuff' ? (
-            <form method="post" action="/auth/freebuff/signout">
-              <input type="hidden" name="returnTo" value="/" />
-              <Button type="submit">Sign out</Button>
-            </form>
+          {me.capabilities.auth === 'supabase' ? (
+            <Button onClick={() => void signOut().then(() => window.location.assign('/'))}>Sign out</Button>
           ) : (
             <Badge tone="warning">Development user</Badge>
           )}
         </div>
-        {me.capabilities.auth === 'development' && <p className="mt-2 text-[12.5px] text-faint">Sign in with Freebuff is not configured yet. Run the app with FREEBUFF_CLIENT_ID set to use real accounts.</p>}
+        {me.capabilities.auth === 'development' && <p className="mt-2 text-[12.5px] text-faint">Supabase is not configured yet. Add SUPABASE_URL and SUPABASE_ANON_KEY to use real accounts.</p>}
       </section>
 
       <section className="mt-8">
@@ -52,7 +50,7 @@ export function Settings() {
           {[
             ['Database', me.capabilities.database, 'D1 via the DB binding'],
             ['Card images', me.capabilities.files, 'R2 via the FILES binding'],
-            ['Sign in with Freebuff', me.capabilities.auth === 'freebuff', 'FREEBUFF_CLIENT_ID'],
+            ['Sign in with Supabase', me.capabilities.auth === 'supabase', 'SUPABASE_URL'],
           ].map(([label, ok, detail]) => (
             <li key={label as string} className="flex h-13 items-center gap-3 px-4">
               <span className="min-w-0 flex-1">

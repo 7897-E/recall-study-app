@@ -56,6 +56,30 @@ const SCHEMA = [
     created_at INTEGER NOT NULL
   )`,
   `CREATE INDEX IF NOT EXISTS sessions_owner ON sessions(owner_sub, created_at DESC)`,
+  `CREATE TABLE IF NOT EXISTS notes (
+    id TEXT PRIMARY KEY,
+    owner_sub TEXT NOT NULL,
+    title TEXT NOT NULL DEFAULT '',
+    body TEXT NOT NULL DEFAULT '',
+    kind TEXT NOT NULL DEFAULT 'note',
+    tags TEXT NOT NULL DEFAULT '[]',
+    pinned INTEGER NOT NULL DEFAULT 0,
+    deck_id TEXT,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS notes_owner ON notes(owner_sub, pinned DESC, updated_at DESC)`,
+  `CREATE TABLE IF NOT EXISTS boards (
+    id TEXT PRIMARY KEY,
+    owner_sub TEXT NOT NULL,
+    title TEXT NOT NULL DEFAULT 'Untitled board',
+    doc TEXT NOT NULL,
+    thumb TEXT,
+    element_count INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS boards_owner ON boards(owner_sub, updated_at DESC)`,
 ]
 
 const ready = new WeakMap<D1Database, Promise<void>>()

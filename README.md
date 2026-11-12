@@ -17,17 +17,26 @@ bun run dev        # http://localhost:5173 with local D1 and R2 (Miniflare)
 bun run build      # dist/client (assets) + dist/study/index.js (Worker)
 ```
 
-On localhost without a `FREEBUFF_CLIENT_ID`, the app signs you in as a local
-development user so everything works before auth is provisioned. A new
-account is seeded with three sample decks and some history; Settings can
-restore or clear them.
+On localhost without `SUPABASE_URL` and `SUPABASE_ANON_KEY`, the app signs you
+in as a loopback-only development user so everything works before auth is
+configured. A new account is seeded with three sample decks, notes, a studio
+board and some history; Settings can restore or clear them.
 
-## Connect it to Freebuff
+## Connect it to Supabase
+
+1. Create a project at supabase.com, then copy the Project URL and anon
+   (publishable) key from Project Settings -> API.
+2. Put them in `.dev.vars` (see `.dev.vars.example`) for local development.
+   Email/password sign-up works out of the box; if you keep email confirmation
+   on, confirm the account from the Supabase dashboard before signing in.
+3. The browser receives the URL and anon key from `GET /api/auth/status`, and
+   the Worker verifies every `Authorization: Bearer` token against
+   `/auth/v1/user` (cached per isolate).
+
+## Connect it to Freebuff Sites
 
 1. `sites_create`, then `sites_add_storage` for D1 named `DB` and R2 named `FILES`.
-2. `sites_enable_auth` (pass `http://localhost:5173` as the local origin while
-   developing). Copy the development variables into `.dev.vars` (see
-   `.dev.vars.example`) to use real accounts locally.
+2. Save `SUPABASE_URL` and `SUPABASE_ANON_KEY` as project secrets.
 3. `bun run build`, then `sites_deploy` with `deploy.json`.
 
 ## Where things are
@@ -45,6 +54,7 @@ restore or clear them.
 
 ## Security notes
 
-Every `/api/*` route requires a signed-in user and scopes queries by
-`owner_sub`. Mutations must be same-origin. Images are addressed by card row,
-never by R2 key. Personalised responses are `Cache-Control: private, no-store`.
+Every `/api/*` route requires a valid Supabase access token and scopes queries
+by `owner_sub` (the Supabase user id). Mutations must be same-origin. Images are
+addressed by card row, never by R2 key. Personalised responses are
+`Cache-Control: private, no-store`.

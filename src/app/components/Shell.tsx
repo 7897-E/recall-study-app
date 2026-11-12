@@ -1,4 +1,4 @@
-import { Flame } from 'lucide-react'
+import { BarChart3, BookOpen, Flame, NotebookPen, PenTool } from 'lucide-react'
 import { Link, NavLink, Outlet } from 'react-router'
 
 import { BRAND } from '../../shared/types'
@@ -31,6 +31,12 @@ export function Shell() {
               <NavLink to="/" end className={({ isActive }) => cx(link, isActive ? 'bg-surface text-fg shadow-card' : 'text-muted hover:text-fg')}>
                 Library
               </NavLink>
+              <NavLink to="/notes" className={({ isActive }) => cx(link, isActive ? 'bg-surface text-fg shadow-card' : 'text-muted hover:text-fg')}>
+                Notes
+              </NavLink>
+              <NavLink to="/studio" className={({ isActive }) => cx(link, isActive ? 'bg-surface text-fg shadow-card' : 'text-muted hover:text-fg')}>
+                Studio
+              </NavLink>
               <NavLink to="/stats" className={({ isActive }) => cx(link, isActive ? 'bg-surface text-fg shadow-card' : 'text-muted hover:text-fg')}>
                 Progress
               </NavLink>
@@ -52,11 +58,21 @@ export function Shell() {
       <main className="mx-auto max-w-[1120px] px-5 py-8 sm:px-8 sm:py-10">
         <Outlet />
       </main>
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 border-t border-line bg-bg/90 p-2 backdrop-blur-xl sm:hidden">
-        <NavLink to="/" end className={({ isActive }) => cx('flex h-11 items-center justify-center rounded-control text-[14px] font-medium', isActive ? 'bg-surface shadow-card' : 'text-muted')}>
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 gap-1 border-t border-line bg-bg/90 p-2 backdrop-blur-xl sm:hidden">
+        <NavLink to="/" end className={({ isActive }) => cx('flex h-11 flex-col items-center justify-center gap-0.5 rounded-control text-[11.5px] font-medium', isActive ? 'bg-surface shadow-card' : 'text-muted')}>
+          <BookOpen className="size-4" />
           Library
         </NavLink>
-        <NavLink to="/stats" className={({ isActive }) => cx('flex h-11 items-center justify-center rounded-control text-[14px] font-medium', isActive ? 'bg-surface shadow-card' : 'text-muted')}>
+        <NavLink to="/notes" className={({ isActive }) => cx('flex h-11 flex-col items-center justify-center gap-0.5 rounded-control text-[11.5px] font-medium', isActive ? 'bg-surface shadow-card' : 'text-muted')}>
+          <NotebookPen className="size-4" />
+          Notes
+        </NavLink>
+        <NavLink to="/studio" className={({ isActive }) => cx('flex h-11 flex-col items-center justify-center gap-0.5 rounded-control text-[11.5px] font-medium', isActive ? 'bg-surface shadow-card' : 'text-muted')}>
+          <PenTool className="size-4" />
+          Studio
+        </NavLink>
+        <NavLink to="/stats" className={({ isActive }) => cx('flex h-11 flex-col items-center justify-center gap-0.5 rounded-control text-[11.5px] font-medium', isActive ? 'bg-surface shadow-card' : 'text-muted')}>
+          <BarChart3 className="size-4" />
           Progress
         </NavLink>
       </nav>
