@@ -125,7 +125,7 @@ export function Deck() {
               <span className="w-6 shrink-0 pt-0.5 text-[12px] tabular-nums text-faint">{i + 1}</span>
               <div className="min-w-0">
                 <p className="text-[15px] font-medium leading-snug">{card.term}</p>
-                {card.hasImage && <img src={`/api/decks/${deck.id}/cards/${card.id}/image`} alt="" className="mt-2 h-20 w-28 rounded-[12px] object-cover" />}
+                {card.hasImage && card.imageUrl && <img src={card.imageUrl} alt="" className="mt-2 h-20 w-28 rounded-[12px] object-cover" />}
               </div>
             </div>
             <p className="border-l border-line pl-4 text-[14.5px] leading-snug text-muted">{card.definition}</p>

@@ -24,6 +24,8 @@ export interface Card {
   term: string
   definition: string
   hasImage: boolean
+  /** Short-lived signed URL for the card image, resolved when the deck loads. */
+  imageUrl?: string | null
   position: number
   progress: { correct: number; incorrect: number; streak: number; mastery: number; nextDue: number | null; lastSeen: number | null }
 }

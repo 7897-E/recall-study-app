@@ -1,9 +1,9 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-// The Supabase URL and anon (publishable) key are fetched from the Worker at
-// runtime so the browser bundle carries no configuration and one build works
-// against any project. The anon key is public by design; row access is limited
-// by the Worker, which verifies the access token on every API call.
+// The Supabase URL and publishable key are build-time configuration for the
+// static build (GitHub Pages has no server to ask), with a runtime fallback to
+// the Worker's status endpoint for the hosted build. The publishable key is
+// public by design; row level security is what protects the data.
 
 export interface AuthStatus {
   mode: 'supabase' | 'development' | 'off'
@@ -12,12 +12,19 @@ export interface AuthStatus {
   supabase: { url: string; anonKey: string } | null
 }
 
+const envUrl = (import.meta.env.VITE_SUPABASE_URL ?? '').trim()
+const envKey = (import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').trim()
+const buildConfig = envUrl && envKey ? { url: envUrl.replace(/\/+$/, ''), anonKey: envKey } : null
+
 const unconfigured: AuthStatus = { mode: 'off', database: false, files: false, supabase: null }
 
 let statusRequest: Promise<AuthStatus> | null = null
 let clientRequest: Promise<SupabaseClient | null> | null = null
 
 export function authStatus(): Promise<AuthStatus> {
+  if (buildConfig) {
+    return Promise.resolve<AuthStatus>({ mode: 'supabase', database: true, files: true, supabase: buildConfig })
+  }
   if (!statusRequest) {
     statusRequest = fetch('/api/auth/status')
       .then((response) => (response.ok ? (response.json() as Promise<AuthStatus>) : unconfigured))
@@ -37,14 +44,6 @@ export function supabaseClient(): Promise<SupabaseClient | null> {
     )
   }
   return clientRequest
-}
-
-/** The current access token, refreshed by supabase-js when it is close to expiry. */
-export async function accessToken(): Promise<string | null> {
-  const client = await supabaseClient()
-  if (!client) return null
-  const { data } = await client.auth.getSession()
-  return data.session?.access_token ?? null
 }
 
 export async function signOut(): Promise<void> {

@@ -36,7 +36,7 @@ export function Settings() {
             {me.user.email && <p className="truncate text-[13px] text-muted">{me.user.email}</p>}
           </div>
           {me.capabilities.auth === 'supabase' ? (
-            <Button onClick={() => void signOut().then(() => window.location.assign('/'))}>Sign out</Button>
+            <Button onClick={() => void signOut().then(() => window.location.assign(import.meta.env.BASE_URL))}>Sign out</Button>
           ) : (
             <Badge tone="warning">Development user</Badge>
           )}
@@ -48,9 +48,9 @@ export function Settings() {
         <h2 className="text-[14px] font-semibold">Connections</h2>
         <ul className="mt-3 divide-y divide-line rounded-card bg-surface shadow-card">
           {[
-            ['Database', me.capabilities.database, 'D1 via the DB binding'],
-            ['Card images', me.capabilities.files, 'R2 via the FILES binding'],
-            ['Sign in with Supabase', me.capabilities.auth === 'supabase', 'SUPABASE_URL'],
+            ['Database', me.capabilities.database, 'Supabase Postgres'],
+            ['Card images', me.capabilities.files, 'Supabase Storage'],
+            ['Sign in with Supabase', me.capabilities.auth === 'supabase', 'VITE_SUPABASE_URL'],
           ].map(([label, ok, detail]) => (
             <li key={label as string} className="flex h-13 items-center gap-3 px-4">
               <span className="min-w-0 flex-1">

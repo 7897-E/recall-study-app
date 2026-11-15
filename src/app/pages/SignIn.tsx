@@ -127,7 +127,7 @@ export function SetupNeeded({ message }: { message: string }) {
         </div>
         <h1 className="mt-4 text-[20px] font-semibold tracking-tight">Almost there</h1>
         <p className="mt-2 text-[14px] leading-relaxed text-muted">{message}</p>
-        <p className="mt-4 text-[13px] text-faint">The database and file storage live in Freebuff Sites. Add D1 storage named DB and R2 storage named FILES, then deploy again.</p>
+        <p className="mt-4 text-[13px] text-faint">If this is a fresh project, run <code className="rounded bg-surface-2 px-1 py-0.5">supabase/schema.sql</code> in the Supabase SQL editor to create the tables, policies and image bucket.</p>
       </div>
     </div>
   )

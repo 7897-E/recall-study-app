@@ -2,10 +2,13 @@
 
 A flashcard study app in the spirit of Quizlet: a library of decks, three study
 modes (flashcards, multiple-choice learn and a timed match game), per-card
-mastery with a light spaced-repetition schedule, streaks, and a progress page
-with an activity heatmap and accuracy history. Cards can carry an image. It
-runs on Freebuff Sites with Sign in with Freebuff, D1 for data and R2 for
-images, and everything is scoped to the signed-in user.
+mastery with a light spaced-repetition schedule, streaks, a progress page, a
+CRM-style notebook and a whiteboard studio.
+
+It ships as a **static site** — `bun run build:pages` produces plain HTML, CSS
+and JS that runs on GitHub Pages — and talks straight to Supabase for accounts,
+data (Postgres) and card images (Storage). Row level security keeps every row
+and every file scoped to the signed-in user, so no application server is needed.
 
 The product name is `BRAND` in `src/shared/types.ts`; change it once.
 
@@ -13,48 +16,64 @@ The product name is `BRAND` in `src/shared/types.ts`; change it once.
 
 ```sh
 bun install
-bun run dev        # http://localhost:5173 with local D1 and R2 (Miniflare)
-bun run build      # dist/client (assets) + dist/study/index.js (Worker)
+cp .env.example .env   # Supabase project URL + publishable key
+bun run dev            # http://localhost:5173
 ```
 
-On localhost without `SUPABASE_URL` and `SUPABASE_ANON_KEY`, the app signs you
-in as a loopback-only development user so everything works before auth is
-configured. A new account is seeded with three sample decks, notes, a studio
-board and some history; Settings can restore or clear them.
+Create the tables once by running [`supabase/schema.sql`](supabase/schema.sql)
+in the Supabase SQL editor. It creates the seven tables, turns on row level
+security, grants the signed-in role access, and creates the private
+`card-images` bucket.
 
-## Connect it to Supabase
+A new account is seeded with three sample decks, five notes, a studio board and
+some history; Settings can restore or clear them.
 
-1. Create a project at supabase.com, then copy the Project URL and anon
-   (publishable) key from Project Settings -> API.
-2. Put them in `.dev.vars` (see `.dev.vars.example`) for local development.
-   Email/password sign-up works out of the box; if you keep email confirmation
-   on, confirm the account from the Supabase dashboard before signing in.
-3. The browser receives the URL and anon key from `GET /api/auth/status`, and
-   the Worker verifies every `Authorization: Bearer` token against
-   `/auth/v1/user` (cached per isolate).
+## Deploy to GitHub Pages
 
-## Connect it to Freebuff Sites
+1. **Settings → Secrets and variables → Actions → Variables:** add
+   `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (the publishable key is
+   public by design — never put a secret key here).
+2. **Settings → Pages → Source:** GitHub Actions.
+3. Push to `main`. [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
+   typechecks, builds and publishes to
+   `https://<user>.github.io/<repo>/`.
 
-1. `sites_create`, then `sites_add_storage` for D1 named `DB` and R2 named `FILES`.
-2. Save `SUPABASE_URL` and `SUPABASE_ANON_KEY` as project secrets.
-3. `bun run build`, then `sites_deploy` with `deploy.json`.
+The base path defaults to `/<repo>/`; set `VITE_BASE` to override it (for a user
+site, `/`). Routing is hash based (`#/notes/:id`), so deep links work on a host
+with no server-side fallback.
+
+```sh
+bun run build        # hosted build (keeps the Cloudflare worker)
+bun run build:pages  # static build for GitHub Pages
+bun run typecheck
+bun test
+```
+
+## Supabase notes
+
+- Sign-up uses email and password. If **Confirm email** is on, users must confirm
+  before signing in; set Authentication → URL Configuration → Site URL to the
+  deployed origin so confirmation links point somewhere real.
+- Images are stored in the private `card-images` bucket under
+  `<user id>/cards/<card id>/…` and served to the app as short-lived signed URLs.
+- Keep the schema in `supabase/schema.sql` in sync with `src/shared/types.ts`.
 
 ## Where things are
 
-- `src/worker/` is the Hono API. `db.ts` owns the schema (created on first
-  request) and the streak maths, `seed.ts` the sample decks, `auth.ts` the
-  Freebuff integration and the loopback-only development user,
-  `routes/decks.ts` decks, cards, images and session recording (where mastery
-  and due dates are updated), `routes/account.ts` the profile and stats.
-- `src/app/` is the React app. `pages/Flashcards.tsx`, `Learn.tsx` and
-  `Match.tsx` are the study modes; each ends in `components/Summary.tsx`,
-  which records the session once. `components/ui.tsx` holds the primitives.
-- `src/styles.css` holds the design tokens. Everything rounded is a squircle
-  via `corner-shape`; true circles use the `round` class.
+- `src/app/lib/backend.ts` is the data layer: it implements the deck, card,
+  session, note and board operations against Supabase (this used to be the
+  Worker's job).
+- `src/app/lib/seed.ts` is the first-run content, `supabase.ts` the client,
+  `api.ts` the React Query hooks, `auth.tsx` the session provider.
+- `src/app/pages/Flashcards.tsx`, `Learn.tsx` and `Match.tsx` are the study
+  modes; each ends in `components/Summary.tsx`, which records the session once.
+- `src/app/components/board/` is the whiteboard model and canvas renderer.
+- `src/worker/` is the earlier Hono backend (D1 + R2 + token introspection). The
+  app no longer calls it; it is kept as reference for the hosted variant.
+- `src/styles.css` holds the design tokens.
 
 ## Security notes
 
-Every `/api/*` route requires a valid Supabase access token and scopes queries
-by `owner_sub` (the Supabase user id). Mutations must be same-origin. Images are
-addressed by card row, never by R2 key. Personalised responses are
-`Cache-Control: private, no-store`.
+Every table has RLS scoped to `auth.uid()`, and storage policies limit objects to
+the caller's own folder. The publishable key is public and safe in the browser;
+a secret key or the database password must never appear in this repository.

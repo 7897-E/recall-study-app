@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
+import { HashRouter, Navigate, Route, Routes } from 'react-router'
 
 import { Shell } from './components/Shell'
 import { Spinner, ToastProvider } from './components/ui'
@@ -63,9 +63,11 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <AuthProvider>
-          <BrowserRouter>
+          {/* Hash routing keeps deep links working on static hosts that have no
+              server-side fallback to index.html. */}
+          <HashRouter>
             <Gate />
-          </BrowserRouter>
+          </HashRouter>
         </AuthProvider>
       </ToastProvider>
     </QueryClientProvider>

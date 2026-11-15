@@ -1,45 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import type { Board, BoardSummary, Card, Deck, Me, Note, Session, SessionResult, Stats, StudyMode } from '../../shared/types'
-import { accessToken } from './supabase'
+import { handleApi } from './backend'
+import { ApiError } from './errors'
 
-export class ApiError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-    public code?: string,
-  ) {
-    super(message)
-  }
-}
+export { ApiError }
 
+// The hooks keep the `/api`-style call shape they always had; in the static
+// build those calls are served locally by the Supabase data layer.
 export async function api<T>(path: string, init?: RequestInit & { json?: unknown }): Promise<T> {
-  const { json, ...rest } = init ?? {}
-  const token = await accessToken()
-  const response = await fetch(`/api${path}`, {
-    credentials: 'same-origin',
-    ...rest,
-    headers: {
-      accept: 'application/json',
-      ...(token ? { authorization: `Bearer ${token}` } : {}),
-      ...(json !== undefined ? { 'content-type': 'application/json' } : {}),
-      ...(rest.headers ?? {}),
-    },
-    body: json !== undefined ? JSON.stringify(json) : rest.body,
-  })
-  if (!response.ok) {
-    let message = response.statusText
-    let code: string | undefined
-    try {
-      const body = (await response.json()) as { error?: string; message?: string }
-      message = body.message ?? body.error ?? message
-      code = body.error
-    } catch {
-      /* no body */
-    }
-    throw new ApiError(response.status, message, code)
+  try {
+    return (await handleApi(init?.method ?? 'GET', path, { json: init?.json, body: init?.body })) as T
+  } catch (error) {
+    if (error instanceof ApiError) throw error
+    throw new ApiError(500, error instanceof Error ? error.message : 'Something went wrong.')
   }
-  return (await response.json()) as T
 }
 
 export const useMe = () => useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/me'), retry: false, staleTime: 60_000 })
