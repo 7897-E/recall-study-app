@@ -713,12 +713,13 @@ async function deleteBoard(client: SupabaseClient, owner: string, boardId: strin
 async function me(client: SupabaseClient, auth: Auth): Promise<Me> {
   const owner = auth.owner
   const [{ data: profile, error }, days] = await Promise.all([
-    client.from('profiles').select('id, seeded_at').eq('id', owner).maybeSingle(),
+    client.from('profiles').select('id, seeded_at, created_at').eq('id', owner).maybeSingle(),
     sessionDays(client, owner),
   ])
   fail(error)
-  let seeded = Boolean((profile as { seeded_at: number | null } | null)?.seeded_at)
-  if (!profile) {
+  const row = profile as { seeded_at: number | null; created_at: number | null } | null
+  let seeded = Boolean(row?.seeded_at)
+  if (!row) {
     const { error: insertError } = await client.from('profiles').insert({ id: owner, created_at: now() })
     if (!insertError) {
       // First visit: furnish the library with sample decks and some history.
@@ -731,6 +732,15 @@ async function me(client: SupabaseClient, auth: Auth): Promise<Me> {
       throw new ApiError(401, 'That account no longer exists. Sign in again.')
     } else if (insertError.code !== '23505') {
       throw new ApiError(400, insertError.message)
+    }
+  } else if (!row.seeded_at && row.created_at && now() - row.created_at < 15_000) {
+    // The profile exists but the sample library is not written yet: another
+    // request (a second tab, or the one that created the profile) is seeding
+    // right now. Wait for it so the first screen is not an empty studio.
+    for (let attempt = 0; attempt < 20 && !seeded; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 150))
+      const { data } = await client.from('profiles').select('seeded_at').eq('id', owner).maybeSingle()
+      seeded = Boolean((data as { seeded_at: number | null } | null)?.seeded_at)
     }
   }
   const metadata = auth.user.user_metadata ?? {}
