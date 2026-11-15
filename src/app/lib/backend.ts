@@ -724,6 +724,11 @@ async function me(client: SupabaseClient, auth: Auth): Promise<Me> {
       // First visit: furnish the library with sample decks and some history.
       await seedLibrary(client, owner)
       seeded = true
+    } else if (insertError.code === '23503') {
+      // The auth user behind this session was deleted; drop the dead session so
+      // the app falls back to the sign-in screen instead of an error page.
+      await client.auth.signOut({ scope: 'local' })
+      throw new ApiError(401, 'That account no longer exists. Sign in again.')
     } else if (insertError.code !== '23505') {
       throw new ApiError(400, insertError.message)
     }
