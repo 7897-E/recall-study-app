@@ -5,10 +5,11 @@ modes (flashcards, multiple-choice learn and a timed match game), per-card
 mastery with a light spaced-repetition schedule, streaks, a progress page, a
 CRM-style notebook and a whiteboard studio.
 
-It ships as a **static site** — `bun run build:pages` produces plain HTML, CSS
-and JS that runs on GitHub Pages — and talks straight to Supabase for accounts,
-data (Postgres) and card images (Storage). Row level security keeps every row
-and every file scoped to the signed-in user, so no application server is needed.
+It is a **static site** — `bun run build` produces plain HTML, CSS and JS that
+runs on GitHub Pages — and talks straight to Supabase for accounts, data
+(Postgres) and card images (Storage). Row level security keeps every row and
+every file scoped to the signed-in user, so there is no application server at
+all.
 
 The product name is `BRAND` in `src/shared/types.ts`; change it once.
 
@@ -43,10 +44,9 @@ site, `/`). Routing is hash based (`#/notes/:id`), so deep links work on a host
 with no server-side fallback.
 
 ```sh
-bun run build        # hosted build (keeps the Cloudflare worker)
-bun run build:pages  # static build for GitHub Pages
+bun run build        # static bundle in dist/
 bun run typecheck
-bun test
+bun test             # freehand smoothing maths
 ```
 
 ## Supabase notes
@@ -54,7 +54,10 @@ bun test
 - Sign-up uses email and password. If **Confirm email** is on, users must confirm
   before signing in; set Authentication → URL Configuration → Site URL to the
   deployed origin so confirmation links point somewhere real.
-- Images are stored in the private `card-images` bucket under
+- Password reset emails use a PKCE code exchange, so add the deployed origin
+  and `http://localhost:5173` to Authentication → URL Configuration → Redirect
+  URLs. Without them the recovery link falls back to the Site URL.
+- Card images are stored in the private `card-images` bucket under
   `<user id>/cards/<card id>/…` and served to the app as short-lived signed URLs.
 - Keep the schema in `supabase/schema.sql` in sync with `src/shared/types.ts`.
 
@@ -68,8 +71,6 @@ bun test
 - `src/app/pages/Flashcards.tsx`, `Learn.tsx` and `Match.tsx` are the study
   modes; each ends in `components/Summary.tsx`, which records the session once.
 - `src/app/components/board/` is the whiteboard model and canvas renderer.
-- `src/worker/` is the earlier Hono backend (D1 + R2 + token introspection). The
-  app no longer calls it; it is kept as reference for the hosted variant.
 - `src/styles.css` holds the design tokens.
 
 ## Security notes

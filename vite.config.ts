@@ -1,17 +1,11 @@
-import { cloudflare } from '@cloudflare/vite-plugin'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-// Two builds share this config:
-//  - `bun run dev` / `bun run build` keeps the Cloudflare plugin, for the
-//    hosted (Worker) build.
-//  - `bun run build:pages` produces a pure static bundle for GitHub Pages:
-//    no Worker, and everything served from the repository sub-path.
-const pages = process.env.PAGES_BUILD === '1'
-
+// One static build. VITE_BASE is the public path: GitHub Pages serves a project
+// site under /<repo>/, a user site or custom domain uses '/'.
 export default defineConfig({
   base: process.env.VITE_BASE ?? '/',
-  plugins: [react(), tailwindcss(), ...(pages ? [] : [cloudflare()])],
+  plugins: [react(), tailwindcss()],
   server: { port: 5173, strictPort: false },
 })

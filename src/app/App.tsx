@@ -11,6 +11,7 @@ import { Learn } from './pages/Learn'
 import { Library } from './pages/Library'
 import { Match } from './pages/Match'
 import { NotesPage } from './pages/Notes'
+import { ResetPassword } from './pages/ResetPassword'
 import { Settings } from './pages/Settings'
 import { SetupNeeded, SignIn } from './pages/SignIn'
 import { StatsPage } from './pages/Stats'
@@ -28,6 +29,10 @@ function Gate() {
       </div>
     )
   }
+  // A recovery link may arrive with no usable session (expired, or opened in
+  // another browser); the reset page explains that instead of hiding behind
+  // the sign-in screen.
+  if (window.location.hash.startsWith('#/reset-password')) return <ResetPassword />
   if (client && !session) return <SignIn />
   if (me.isLoading) {
     return (
@@ -53,6 +58,7 @@ function Gate() {
       <Route path="decks/:id/flashcards" element={<Flashcards />} />
       <Route path="decks/:id/learn" element={<Learn />} />
       <Route path="decks/:id/match" element={<Match />} />
+      <Route path="reset-password" element={<ResetPassword />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

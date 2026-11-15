@@ -1,4 +1,4 @@
-// Types shared by the Worker (src/worker) and the app (src/app).
+// Types shared by the data layer (src/app/lib) and the UI (src/app).
 
 export const BRAND = 'Recall'
 

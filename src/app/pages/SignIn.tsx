@@ -6,6 +6,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { Logo } from '../components/Shell'
 import { Button, Input, useToast } from '../components/ui'
 import { useAuth } from '../lib/auth'
+import { resetRedirect } from '../lib/supabase'
 
 export function SignIn() {
   const { client } = useAuth()
@@ -57,6 +58,21 @@ function AuthForm({ client }: { client: SupabaseClient }) {
     }
   }
 
+  async function sendReset() {
+    const address = email.trim()
+    if (!address) {
+      setError('Type your email first, then choose Forgot password.')
+      return
+    }
+    setBusy(true)
+    setError(null)
+    setNotice(null)
+    const { error: failure } = await client.auth.resetPasswordForEmail(address, { redirectTo: resetRedirect() })
+    setBusy(false)
+    if (failure) setError(failure.message)
+    else setNotice('Check your email for a link to set a new password.')
+  }
+
   return (
     <div className="rounded-card bg-surface p-6 shadow-float">
       <h2 className="text-[19px] font-semibold tracking-tight">{mode === 'signin' ? 'Sign in' : 'Create your account'}</h2>
@@ -67,7 +83,12 @@ function AuthForm({ client }: { client: SupabaseClient }) {
           <Input type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" />
         </label>
         <label className="grid gap-1.5">
-          <span className="text-[13px] font-medium">Password</span>
+          <span className="flex items-center justify-between gap-3">
+            <span className="text-[13px] font-medium">Password</span>
+            <button type="button" onClick={sendReset} disabled={busy} className="text-[12px] font-medium text-accent hover:underline disabled:opacity-50">
+              Forgot password?
+            </button>
+          </span>
           <Input
             type="password"
             required

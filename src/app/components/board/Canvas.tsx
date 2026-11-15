@@ -17,6 +17,7 @@ import {
   resizeElement,
   screenToWorld,
   touchesBox,
+  withSmoothedPoints,
 } from './model'
 import { drawMarquee, drawScene, drawSelection, inkOn } from './render'
 
@@ -198,7 +199,10 @@ export function Canvas({ doc, view, tool, style, selection, editing, gridSnap, s
     if (start.kind === 'stroke' || start.kind === 'highlight') {
       const points = start.points ?? []
       const last = points[points.length - 1]
-      const next = !last || Math.hypot(world.x - last.x, world.y - last.y) > 1.6 / view.zoom ? [...points, world] : points
+      // Sample densely: the renderer turns these points into a curve, so a
+      // short minimum step keeps corners from being cut off between events.
+      const minStep = (start.kind === 'highlight' ? 2.4 : 0.9) / view.zoom
+      const next = !last || Math.hypot(world.x - last.x, world.y - last.y) > minStep ? [...points, world] : points
       const xs = next.map((point) => point.x)
       const ys = next.map((point) => point.y)
       const minX = Math.min(...xs)
@@ -332,7 +336,17 @@ export function Canvas({ doc, view, tool, style, selection, editing, gridSnap, s
         onView({ zoom: view.zoom, pan: { x: drag.startPan.x + (screen.x - drag.startScreen.x), y: drag.startPan.y + (screen.y - drag.startScreen.y) } })
         return
       case 'draw': {
-        const next = grow(drag.element, world)
+        // A pointermove can carry several samples; using them all is what makes
+        // fast strokes smooth instead of a handful of long straight segments.
+        const native = event.nativeEvent
+        const coalesced = typeof native.getCoalescedEvents === 'function' ? native.getCoalescedEvents() : []
+        const samples = coalesced.length ? coalesced : [native]
+        let next = drag.element
+        for (const sample of samples) {
+          next = grow(next, screenToWorld({ x: sample.clientX - rect.left, y: sample.clientY - rect.top }, view))
+        }
+        if (next === drag.element) return
+        drag.element = next
         draftRef.current = next
         setDraft(next)
         return
@@ -399,9 +413,10 @@ export function Canvas({ doc, view, tool, style, selection, editing, gridSnap, s
     interactionRef.current = null
     if (!drag) return
     if (drag.type === 'draw') {
-      const element = draftRef.current
+      const drawn = draftRef.current
       draftRef.current = null
       setDraft(null)
+      const element = drawn && (drawn.kind === 'stroke' || drawn.kind === 'highlight') ? withSmoothedPoints(drawn) : drawn
       if (element && isMeaningful(element)) {
         onHistory(drag.startDoc)
         onMutate((current) => ({ ...current, elements: [...current.elements, element] }))

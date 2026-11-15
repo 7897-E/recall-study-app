@@ -24,7 +24,7 @@ jobs:
           bun-version: latest
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
-      - run: bun run build:pages
+      - run: bun run build
         env:
           # Repository variables (Settings -> Secrets and variables -> Actions).
           # The publishable key is public; never put a secret key here.

@@ -45,6 +45,34 @@ export function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth:
   return lines
 }
 
+/**
+ * Paints a freehand path as a Catmull-Rom spline converted to cubic béziers:
+ * the curve passes through every captured point, so the ink follows the hand
+ * instead of joining samples with straight hops.
+ */
+export function strokePath(ctx: CanvasRenderingContext2D, points: BoardPoint[]) {
+  if (points.length < 2) return
+  ctx.moveTo(points[0].x, points[0].y)
+  if (points.length === 2) {
+    ctx.lineTo(points[1].x, points[1].y)
+    return
+  }
+  for (let i = 0; i < points.length - 1; i++) {
+    const first = points[i - 1] ?? points[i]
+    const from = points[i]
+    const to = points[i + 1]
+    const last = points[i + 2] ?? to
+    ctx.bezierCurveTo(
+      from.x + (to.x - first.x) / 6,
+      from.y + (to.y - first.y) / 6,
+      to.x - (last.x - from.x) / 6,
+      to.y - (last.y - from.y) / 6,
+      to.x,
+      to.y,
+    )
+  }
+}
+
 function arrowHead(ctx: CanvasRenderingContext2D, a: BoardPoint, b: BoardPoint, width: number) {
   const angle = Math.atan2(b.y - a.y, b.x - a.x)
   const size = 7 + width * 2.2
@@ -86,13 +114,7 @@ export function drawElement(ctx: CanvasRenderingContext2D, el: BoardElement) {
         break
       }
       ctx.beginPath()
-      ctx.moveTo(points[0].x, points[0].y)
-      for (let i = 1; i < points.length - 1; i++) {
-        const mid = { x: (points[i].x + points[i + 1].x) / 2, y: (points[i].y + points[i + 1].y) / 2 }
-        ctx.quadraticCurveTo(points[i].x, points[i].y, mid.x, mid.y)
-      }
-      const last = points[points.length - 1]
-      ctx.lineTo(last.x, last.y)
+      strokePath(ctx, points)
       ctx.stroke()
       break
     }

@@ -127,6 +127,40 @@ export function normalizeElement(el: BoardElement): BoardElement {
   return next
 }
 
+/**
+ * Chaikin smoothing: cuts the corners off a freehand path while keeping both
+ * ends exactly where the pointer started and stopped.
+ */
+export function smoothStroke(points: BoardPoint[], passes = 1): BoardPoint[] {
+  if (points.length < 3) return points
+  let current = points
+  for (let pass = 0; pass < passes; pass++) {
+    const next: BoardPoint[] = [current[0]]
+    for (let i = 0; i < current.length - 1; i++) {
+      const a = current[i]
+      const b = current[i + 1]
+      next.push({ x: a.x * 0.75 + b.x * 0.25, y: a.y * 0.75 + b.y * 0.25 })
+      next.push({ x: a.x * 0.25 + b.x * 0.75, y: a.y * 0.25 + b.y * 0.75 })
+    }
+    next.push(current[current.length - 1])
+    current = next
+    if (current.length > 4000) break
+  }
+  return current
+}
+
+/** Replaces a stroke's points with a smoothed path and refits its box. */
+export function withSmoothedPoints(el: BoardElement): BoardElement {
+  const points = el.points
+  if (!points || points.length < 3) return el
+  const smoothed = smoothStroke(points)
+  const xs = smoothed.map((point) => point.x)
+  const ys = smoothed.map((point) => point.y)
+  const minX = Math.min(...xs)
+  const minY = Math.min(...ys)
+  return { ...el, points: smoothed, x: minX, y: minY, w: Math.max(...xs) - minX, h: Math.max(...ys) - minY }
+}
+
 /** Moves an element's geometry scale with its box (strokes and lines included). */
 export function applyBox(el: BoardElement, box: Box): BoardElement {
   const sx = el.w ? box.w / el.w : 1

@@ -1,5 +1,0 @@
-# Copy to .dev.vars for local development against a real Supabase project.
-# Supabase Dashboard -> Project Settings -> API: Project URL and anon (publishable) key.
-# Without these the app falls back to a loopback-only development user.
-SUPABASE_URL=
-SUPABASE_ANON_KEY=

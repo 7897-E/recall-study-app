@@ -38,12 +38,19 @@ export function supabaseClient(): Promise<SupabaseClient | null> {
     clientRequest = authStatus().then((status) =>
       status.supabase
         ? createClient(status.supabase.url, status.supabase.anonKey, {
-            auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+            // PKCE keeps the recovery link working on a static host: Supabase
+            // returns a ?code= that the client exchanges for a session.
+            auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' },
           })
         : null,
     )
   }
   return clientRequest
+}
+
+/** Where the recovery email should land: this origin, this app, the reset route. */
+export function resetRedirect(): string {
+  return `${window.location.origin}${import.meta.env.BASE_URL}#/reset-password`
 }
 
 export async function signOut(): Promise<void> {
